@@ -1,21 +1,18 @@
-# Specific Loot Downloader
+# Virtual Pager Enhancer - v2.0
 
 ## Overview
 
-The virtual Pager allows users to download their whole loot folder. Over time, more and more payloads are added to the device, which means the loot folder keeps growing.
+Virtual Pager Enhancer is a lightweight client-side enhancement for the Virtual Pager web interface that improves both **loot management** and **visual customization**.
 
-As a user, I found it difficult to download a specific loot folder, because the current functionality only allows downloading the entire loot folder, not individual folders.
+## Functionality
 
-This payload introduces a new functionality that lets you download specific loot folders, making it easier to get only what you need.
 
-## How it works
+* 📂⬇️ **Loot Enumeration & Selective Downloads** 
 
-The virtual pager web application resides in the `/pineapple/ui/` folder.
-Here, we have the `index.html` file of the web application.
+    Discovers available loot folders from `/root/loot` and allows downloading individual folders using the existing `/api/files/zip/root/loot/{FOLDER}` endpoint. While the Virtual Pager UI only exposes this API for `/root/loot/handshakes`, the enhancer extends its use to any loot folder, eliminating the need to download the entire loot directory.
 
-We are going to inject a `<script>` tag that includes our custom payload.
+* 🎨 **Pager Skinner**
+  Enables customization of the Virtual Pager interface by:
 
-The script retrieves the contents of the `/root/loot` folder by sending a request to our own server we host on port 4040.
-
-Downloading specific folders is done using the `/api/files/zip/root/loot/{FOLDER}` endpoint. 
-By default, only the `/api/files/zip/root/loot/handshakes` API is exposed to the web application. However, the custom sidebar menu uses this API endpoint to download any specific loot folder you want.
+  * Changing background colors
+  * Setting custom background images

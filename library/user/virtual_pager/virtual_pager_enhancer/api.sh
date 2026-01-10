@@ -3,6 +3,15 @@ echo "Content-Type: application/json"
 echo "Access-Control-Allow-Origin: *"
 echo ""
 
+CONFIG_PATH="/tmp/virtual_pager_enhancer"
+SKINNER_CONFIG_FILE="$CONFIG_PATH/skinnerconfig.json"
+
+mkdir -p "$CONFIG_PATH"
+# Ensure file exists and contains at least an empty object if new
+if [ ! -f "$SKINNER_CONFIG_FILE" ]; then
+    echo "{}" > "$SKINNER_CONFIG_FILE"
+fi
+
 url_decode() {
     local encoded="$1"
     printf '%b' "${encoded//%/\\x}" | sed 's/+/ /g'
@@ -34,10 +43,35 @@ run_command() {
     fi
     local output
     output=$(eval "$cmd" 2>&1)
-    echo "{\"status\":\"done\",\"output\":\"$(echo "$output" | sed 's/"/\\"/g')\"}"
+    # We still need to escape the output of arbitrary commands to keep JSON valid
+    echo "{\"status\":\"done\",\"output\":\"$(echo "$output" | sed 's/"/\\"/g' | tr -d '\n')\"}"
 }
 
-# Parse and URL-decode query parameters
+list_config() {
+    if [ ! -s "$SKINNER_CONFIG_FILE" ]; then
+        echo '{"status":"empty_config","config":{}}'
+    else
+        # Directly embed the file content as a JSON object
+        echo -n "{\"status\":\"ok\",\"config\":"
+        cat "$SKINNER_CONFIG_FILE"
+        echo -n "}"
+    fi
+}
+
+set_config() {
+    local body
+    body=$(cat)
+
+    if [ -z "$body" ]; then
+        echo '{"status":"empty_body"}'
+        return
+    fi
+
+    echo "$body" > "$SKINNER_CONFIG_FILE"
+    echo '{"status":"ok","message":"config_updated"}'
+}
+
+# Parse GET parameters
 for param in $(echo "$QUERY_STRING" | tr '&' ' '); do
     key=$(echo "$param" | cut -d= -f1)
     value=$(echo "$param" | cut -d= -f2-)
@@ -50,16 +84,26 @@ for param in $(echo "$QUERY_STRING" | tr '&' ' '); do
     esac
 done
 
-if [ -z "$TOKEN" ] || [ -z "$SERVERID" ]; then
-    echo '{"status":"missing_auth"}'
-    exit 0
-fi
+AUTH_ACTIONS=("command" "setconfig")
+UNAUTH_ACTIONS=("listconfig")
 
-check_authentication "$TOKEN" "$SERVERID"
+if [[ " ${AUTH_ACTIONS[*]} " =~ " $ACTION " ]]; then
+    if [ -z "$TOKEN" ] || [ -z "$SERVERID" ]; then
+        echo '{"status":"missing_auth"}'
+        exit 0
+    fi
+    check_authentication "$TOKEN" "$SERVERID"
+fi
 
 case "$ACTION" in
     command)
         run_command "$DATA"
+        ;;
+    listconfig)
+        list_config
+        ;;
+    setconfig)
+        set_config
         ;;
     *)
         echo '{"status":"unknown_action"}'

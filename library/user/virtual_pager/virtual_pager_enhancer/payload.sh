@@ -2,7 +2,7 @@
 # Title: Virtual Pager Enhancer
 # Author: Rektile404
 # Description: Tool used to add functionality to the virtual pager to extract specific loot
-# Version: 1.1
+# Version: 2.0
 
 CONFIG_PATH="/tmp/virtual_pager_enhancer"
 CONFIG_FILE="config.json"
@@ -16,7 +16,7 @@ INDEX_FILE="index.html"
 VIRTUAL_PAGER_ENHANCER_TAG="<!-- Virtual Pager Enhancer BEGIN -->"
 VIRTUAL_PAGER_ENHANCER_END="<!-- Virtual Pager Enhancer END -->"
 
-CURRENT_VERSION="1.1"
+CURRENT_VERSION="2.0"
 SERVER_PORT=4040
 SERVICE_FILE="/etc/init.d/virtual_pager_enhancer_server"
 
@@ -34,6 +34,12 @@ echo "Nothing to see here :)" > "$WWW_ABS_PATH/index.html"
 
 update() {
     LOG "Different version found. Upgrading..."
+
+    if [ -f "$SERVICE_FILE" ]; then
+        /etc/init.d/$(basename "$SERVICE_FILE") stop
+        /etc/init.d/$(basename "$SERVICE_FILE") disable
+    fi
+
     cp -f "$BACKUP_VIRTUAL_PAGER_DIR/$INDEX_FILE" "$VIRTUAL_PAGER_DIR/$INDEX_FILE" 2>/dev/null
     echo "{\"version\":\"$CURRENT_VERSION\"}" > "$CONFIG_PATH/$CONFIG_FILE"
 }
